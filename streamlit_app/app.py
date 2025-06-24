@@ -66,6 +66,54 @@ st.markdown("""
 Analyze how macroeconomic events such as CPI, Unemployment, and Fed Rate changes influence various stock market sectors using Machine Learning and Time Series Forecasting.
 """)
 
+with st.expander("📘 What does this app do?"):
+    st.markdown("""
+    Welcome to the **Macroeconomic Event Analyzer**! 🎯
+
+    This interactive tool is built to help you understand how **macroeconomic events** — such as changes in inflation, unemployment, or interest rates — impact different **stock market sectors** (like Technology, Energy, or Finance).
+
+    ### 🧠 Core Features
+
+    🔹 **Sector ETF Analysis**  
+    Track how various sectors represented by **SPDR ETFs** (e.g., XLK for Tech, XLE for Energy) respond to macroeconomic changes over time.
+
+    🔹 **Macroeconomic Data Integration**  
+    We pull key economic indicators like:
+    - **CPI (Consumer Price Index)** – Inflation trends 📈  
+    - **Unemployment Rate** – Labor market health 👷‍♀️  
+    - **Federal Funds Rate** – Interest rate policy by the Fed 🏦
+
+    🔹 **Model Choices**  
+    Choose from two models depending on your goal:
+    - 📊 **Prophet Forecast** – Predicts **future price trends** using Facebook Prophet (great for trend forecasting).
+    - ⚡ **XGBoost Prediction** – Uses machine learning to classify **upward or downward movements** based on historical macro data.
+
+    ### ✅ How to Use
+
+    1. **Select Date Range**: Pick a start and end date to define the period of analysis.
+    2. **Choose Sector(s)**: Select one or more ETFs to analyze.
+    3. **Pick a Model**:
+        - Use **Prophet** if you want to forecast future prices.
+        - Use **XGBoost** if you want to see predicted movement direction.
+    4. **Explore the Results**:
+        - 📈 Visual forecasts or predictions
+        - 🔥 Sector impact heatmaps
+        - 🧮 Correlation and feature importance analysis
+        - 💾 Export predictions to CSV
+
+    ### 💡 Who is this for?
+
+    This tool is ideal for:
+    - Students learning finance or data science 📚
+    - Retail investors and market watchers 💼
+    - Analysts researching macro-sector relationships 📉
+    - Curious minds exploring economics + AI 🤖
+
+    **No coding required!** Just make your selections and the app will do the rest.
+
+    """)
+
+
 # --- SIDEBAR ---
 st.sidebar.header("🔍 Filter Data")
 start_date = st.sidebar.date_input("Start Date", datetime.date(2019, 1, 1))
