@@ -1,0 +1,11 @@
+matplotlib~=3.9.4
+seaborn~=0.13.2
+pandas~=2.3.0
+streamlit~=1.46.0
+python-dotenv~=1.1.1
+fredapi~=0.5.2
+yfinance~=0.2.63
+plotly~=6.1.2
+prophet~=1.1.7
+xgboost~=2.1.4
+scikit-learn~=1.6.1
