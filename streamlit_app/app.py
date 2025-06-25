@@ -16,6 +16,7 @@ from src.model_xgboost import predict_sector_movements, get_feature_importance
 from src.fetch_fred import fetch_series
 import yfinance as yf
 
+
 # --- HELPER FUNCTIONS ---
 def load_fred_data(start_date="2010-01-01") -> pd.DataFrame:
     series_names = ["CPI", "Unemployment Rate", "Fed Funds Rate"]
@@ -23,6 +24,7 @@ def load_fred_data(start_date="2010-01-01") -> pd.DataFrame:
     df = pd.concat(dfs, axis=1).dropna()
     df.index = pd.to_datetime(df.index)
     return df
+
 
 def load_sector_data(start="2019-01-01") -> pd.DataFrame:
     tickers = ["XLK", "XLV", "XLF", "XLE", "XLI", "XLY", "XLP", "XLB", "XLU", "XLRE"]
@@ -34,6 +36,7 @@ def load_sector_data(start="2019-01-01") -> pd.DataFrame:
     except Exception as e:
         st.error(f"Error loading sector data: {e}")
         return pd.DataFrame()
+
 
 def forecast_sector_trend(df: pd.DataFrame, sector: str):
     sector_df = df[[sector]].dropna()
@@ -47,6 +50,7 @@ def forecast_sector_trend(df: pd.DataFrame, sector: str):
         yaxis_title="Price"
     )
     return fig
+
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -110,17 +114,17 @@ with st.expander("📘 What does this app do?"):
 # --- SIDEBAR ---
 st.sidebar.header("🔍 Filter Data")
 start_date = st.sidebar.date_input("Start Date", datetime.date(2019, 1, 1))
-end_date   = st.sidebar.date_input("End Date", datetime.date.today())
+end_date = st.sidebar.date_input("End Date", datetime.date.today())
 
 sectors = ["XLK", "XLV", "XLF", "XLE", "XLI", "XLY", "XLP", "XLB", "XLU", "XLRE"]
 selected_sectors = st.sidebar.multiselect("Select Sectors (ETFs)", sectors, default=sectors[:4])
 model_type = st.sidebar.radio("Model Type", ["Prophet Forecast", "XGBoost Prediction"])
 
 # --- LOAD & FILTER DATA ---
-fred_df   = load_fred_data()
+fred_df = load_fred_data()
 sector_df = load_sector_data()
 
-fred_df   = fred_df.loc[start_date:end_date]
+fred_df = fred_df.loc[start_date:end_date]
 sector_df = sector_df.loc[start_date:end_date]
 
 # --- KPI SECTION ---
@@ -170,7 +174,7 @@ with tab1:
 
             # Results table + download
             results = pd.DataFrame({
-                "Date":   predictions.index,
+                "Date": predictions.index,
                 "Prediction": predictions.map({1: "Up", 0: "Down"})
             }).set_index("Date")
             st.dataframe(results)

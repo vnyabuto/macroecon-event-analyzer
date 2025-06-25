@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="3c70403f-e9d6-4ff7-a2f5-ca2a91b85378" name="Changes" comment="" />
+    <list default="true" id="3c70403f-e9d6-4ff7-a2f5-ca2a91b85378" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/model_prophet.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/model_prophet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/streamlit_app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/streamlit_app/app.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,9 +16,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 4
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="2ywY4ZmdEEOFL35DidkMzOViLA4" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -22,7 +28,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master"
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Users/User/Desktop/macroecon-event-analyzer"
   }
 }]]></component>
   <component name="RunManager">
