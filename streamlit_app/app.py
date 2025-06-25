@@ -1,3 +1,5 @@
+print("[app.py] v1.0 loaded")
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,7 +8,7 @@ import sys
 import os
 import datetime
 
-# Fix import path
+# Fix import path so src/ can be found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.model_prophet import train_prophet_model
@@ -17,42 +19,31 @@ import yfinance as yf
 # --- HELPER FUNCTIONS ---
 def load_fred_data(start_date="2010-01-01") -> pd.DataFrame:
     series_names = ["CPI", "Unemployment Rate", "Fed Funds Rate"]
-    all_dfs = [fetch_series(name, start_date=start_date) for name in series_names]
-    merged_df = pd.concat(all_dfs, axis=1).dropna()
-    return merged_df
+    dfs = [fetch_series(name, start_date=start_date) for name in series_names]
+    return pd.concat(dfs, axis=1).dropna()
 
-
-def load_sector_data(start="2019-01-01"):
+def load_sector_data(start="2019-01-01") -> pd.DataFrame:
     tickers = ["XLK", "XLV", "XLF", "XLE", "XLI", "XLY", "XLP", "XLB", "XLU", "XLRE"]
     try:
-        df = yf.download(tickers, start=start, group_by='ticker', auto_adjust=True)
-
-        # Extract Adjusted Close prices
-        adj_close = pd.DataFrame()
-        for ticker in tickers:
-            if (ticker in df.columns.get_level_values(0)) and ("Close" in df[ticker].columns):
-                adj_close[ticker] = df[ticker]["Close"]
-            else:
-                print(f"Warning: '{ticker}' data not available or missing 'Close'.")
-
-        adj_close.dropna(how='all', inplace=True)
-
-        # ✅ Convert index to datetime to fix filtering issues
-        adj_close.index = pd.to_datetime(adj_close.index)
-
-        return adj_close
-
+        raw = yf.download(tickers, start=start, group_by='ticker', auto_adjust=True)
+        df = pd.DataFrame({t: raw[t]["Close"] for t in tickers if t in raw})
+        df.index = pd.to_datetime(df.index)
+        return df.dropna(how='all')
     except Exception as e:
-        print("Error loading sector data:", e)
+        st.error(f"Error loading sector data: {e}")
         return pd.DataFrame()
 
-def forecast_sector_trend(df, sector):
+def forecast_sector_trend(df: pd.DataFrame, sector: str):
     sector_df = df[[sector]].dropna()
     model, forecast = train_prophet_model(sector_df, target_column=sector)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], name='Forecast'))
     fig.add_trace(go.Scatter(x=sector_df.index, y=sector_df[sector], name='Actual'))
-    fig.update_layout(title=f"{sector} Forecast with Prophet", xaxis_title="Date", yaxis_title="Price")
+    fig.update_layout(
+        title=f"{sector} Forecast with Prophet",
+        xaxis_title="Date",
+        yaxis_title="Price"
+    )
     return fig
 
 # --- PAGE CONFIG ---
@@ -66,7 +57,6 @@ st.title("📊 Macroeconomic Event Analyzer")
 st.markdown("""
 Analyze how macroeconomic events such as CPI, Unemployment, and Fed Rate changes influence various stock market sectors using Machine Learning and Time Series Forecasting.
 """)
-
 with st.expander("📘 What does this app do?"):
     st.markdown("""
     Welcome to the **Macroeconomic Event Analyzer**! 🎯
@@ -118,33 +108,33 @@ with st.expander("📘 What does this app do?"):
 # --- SIDEBAR ---
 st.sidebar.header("🔍 Filter Data")
 start_date = st.sidebar.date_input("Start Date", datetime.date(2019, 1, 1))
-end_date = st.sidebar.date_input("End Date", datetime.date.today())
+end_date   = st.sidebar.date_input("End Date", datetime.date.today())
 
 sectors = ["XLK", "XLV", "XLF", "XLE", "XLI", "XLY", "XLP", "XLB", "XLU", "XLRE"]
 selected_sectors = st.sidebar.multiselect("Select Sectors (ETFs)", sectors, default=sectors[:4])
 model_type = st.sidebar.radio("Model Type", ["Prophet Forecast", "XGBoost Prediction"])
 
-# --- LOAD DATA ---
-fred_df = load_fred_data()
+# --- LOAD & FILTER DATA ---
+fred_df   = load_fred_data()
 sector_df = load_sector_data()
 
-# --- FILTER ---
-fred_df = fred_df[(fred_df.index >= pd.to_datetime(start_date)) & (fred_df.index <= pd.to_datetime(end_date))]
-sector_df = sector_df[(sector_df.index >= pd.to_datetime(start_date)) & (sector_df.index <= pd.to_datetime(end_date))]
+fred_df   = fred_df.loc[start_date:end_date]
+sector_df = sector_df.loc[start_date:end_date]
 
-# --- KPIs ---
+# --- KPI SECTION ---
 st.subheader("📌 Key Macroeconomic Indicators")
-kpi1, kpi2, kpi3 = st.columns(3)
-
-latest_date = fred_df.index[-1]
-latest_data = fred_df.loc[latest_date]
-
-kpi1.metric("CPI", f"{latest_data['CPI']:.2f}")
-kpi2.metric("Unemployment Rate", f"{latest_data['Unemployment Rate']}%")
-kpi3.metric("Fed Funds Rate", f"{latest_data['Fed Funds Rate']:.2f}%")
+k1, k2, k3 = st.columns(3)
+latest = fred_df.iloc[-1]
+k1.metric("CPI", f"{latest['CPI']:.2f}")
+k2.metric("Unemployment Rate", f"{latest['Unemployment Rate']:.2f}%")
+k3.metric("Fed Funds Rate", f"{latest['Fed Funds Rate']:.2f}%")
 
 # --- TABS ---
-tab1, tab2, tab3 = st.tabs(["📈 Forecast & Prediction", "🔥 Sector Impact Heatmap", "🔗 Correlation Analysis"])
+tab1, tab2, tab3 = st.tabs([
+    "📈 Forecast & Prediction",
+    "🔥 Sector Impact Heatmap",
+    "🔗 Correlation Analysis"
+])
 
 with tab1:
     st.subheader(f"Model Results ({model_type})")
@@ -152,67 +142,60 @@ with tab1:
         st.markdown(f"### {sector} Sector")
 
         if model_type == "Prophet Forecast":
-            fig = forecast_sector_trend(sector_df, sector)
-            st.plotly_chart(fig, use_container_width=True)
+            try:
+                fig = forecast_sector_trend(sector_df, sector)
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error forecasting {sector}: {e}")
+        else:  # XGBoost Prediction
+            combined = pd.concat([sector_df[[sector]], fred_df], axis=1).dropna()
+            accuracy, predictions, model = predict_sector_movements(combined, sector)
 
-        elif model_type == "XGBoost Prediction":
-            # Combine macro and sector data
-            combined_df = pd.concat([sector_df[[sector]], fred_df], axis=1).dropna()
+            if accuracy is None:
+                st.warning(f"⚠️ Insufficient data or error for {sector}, skipping XGBoost.")
+                continue
 
-            # Run XGBoost prediction
-            accuracy, predictions, model = predict_sector_movements(combined_df, sector)
-
-            # Show results
-            st.subheader(f"{sector} Sector – XGBoost Prediction Accuracy: {accuracy:.2%}")
+            st.subheader(f"{sector} – XGBoost Accuracy: {accuracy:.2%}")
             st.line_chart(predictions)
 
-            # Feature importance plot
-            fig_importance = get_feature_importance(model, combined_df.drop(columns=[sector, "Target"],
-                                                                            errors="ignore").columns.tolist())
-            st.plotly_chart(fig_importance, use_container_width=True, key=f"importance_chart_{sector}")
+            # Feature importance
+            features = combined.drop(columns=[sector]).columns.tolist()
+            fig_imp = get_feature_importance(model, features)
+            st.plotly_chart(fig_imp, use_container_width=True)
 
-            # Combine predictions with date index and optionally the actual target
-            results_df = pd.DataFrame({
-                "Date": predictions.index,
-                "Predicted Direction": predictions.values,
-            })
-            results_df["Predicted Direction"] = results_df["Predicted Direction"].map({1: "Up", 0: "Down"})
-            results_df.set_index("Date", inplace=True)
-
-            # Display results in a table
-            st.subheader("📋 Prediction Results")
-            st.dataframe(results_df)
-
-            # Provide download button
-            csv = results_df.to_csv().encode("utf-8")
+            # Results table + download
+            results = pd.DataFrame({
+                "Date":   predictions.index,
+                "Prediction": predictions.map({1: "Up", 0: "Down"})
+            }).set_index("Date")
+            st.dataframe(results)
+            csv = results.to_csv().encode("utf-8")
             st.download_button(
-                label="⬇️ Download Predictions as CSV",
-                data=csv,
-                file_name=f"{sector}_xgboost_predictions.csv",
-                mime="text/csv",
+                "Download Predictions CSV",
+                csv,
+                file_name=f"{sector}_predictions.csv",
+                mime="text/csv"
             )
 
 with tab2:
-    st.subheader("Heatmap: Macroeconomic Event Impact by Sector")
-    heat_df = sector_df[selected_sectors].pct_change().rolling(3).mean().dropna()
-    heat_corr = heat_df.corrwith(fred_df["Fed Funds Rate"].pct_change().rolling(3).mean().dropna(), method='pearson')
-
-    heatmap_fig = go.Figure(data=go.Heatmap(
-        z=[heat_corr.values],
-        x=selected_sectors,
-        y=["Fed Funds Rate"],
-        colorscale="RdBu",
-        zmin=-1,
-        zmax=1
+    st.subheader("Heatmap: Macro Impact by Sector")
+    pct = sector_df[selected_sectors].pct_change().rolling(3).mean().dropna()
+    corr = pct.corrwith(
+        fred_df["Fed Funds Rate"].pct_change().rolling(3).mean().dropna(),
+        method='pearson'
+    )
+    heat = go.Figure(go.Heatmap(
+        z=[corr.values], x=selected_sectors, y=["Fed Funds Rate"],
+        colorscale="RdBu", zmin=-1, zmax=1
     ))
-    st.plotly_chart(heatmap_fig, use_container_width=True)
+    st.plotly_chart(heat, use_container_width=True)
 
 with tab3:
     st.subheader("Correlation Matrix")
-    combined = pd.concat([fred_df, sector_df[selected_sectors]], axis=1).dropna()
-    corr = combined.corr().round(2)
-    fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu", zmin=-1, zmax=1)
-    st.plotly_chart(fig_corr, use_container_width=True)
+    merged = pd.concat([fred_df, sector_df[selected_sectors]], axis=1).dropna()
+    mat = merged.corr().round(2)
+    fig = px.imshow(mat, text_auto=True, color_continuous_scale="RdBu", zmin=-1, zmax=1)
+    st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
-st.caption("Made with ❤️ by Victor | Powered by Streamlit, Plotly, Prophet, and XGBoost")
+st.caption("Made with ❤️ by Victor | Streamlit · Plotly · Prophet · XGBoost")
