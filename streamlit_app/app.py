@@ -11,14 +11,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.model_prophet import train_prophet_model
 from src.model_xgboost import predict_sector_movements, get_feature_importance
-from src.utils import plot_prophet_forecast, plot_sector_heatmap
-from src.fetch_fred import fetch_all_series  # Correct import
-from src.fetch_yfinance import load_sector_data # if you move it to a helper file
+from src.fetch_fred import fetch_series
 import yfinance as yf
 
 # --- HELPER FUNCTIONS ---
-def load_fred_data():
-    return fetch_all_series()
+def load_fred_data(start_date="2010-01-01") -> pd.DataFrame:
+    series_names = ["CPI", "Unemployment Rate", "Fed Funds Rate"]
+    all_dfs = [fetch_series(name, start_date=start_date) for name in series_names]
+    merged_df = pd.concat(all_dfs, axis=1).dropna()
+    return merged_df
 
 
 def load_sector_data(start="2019-01-01"):

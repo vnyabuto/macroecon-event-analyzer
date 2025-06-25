@@ -50,3 +50,9 @@ def get_feature_importance(model, feature_names):
 
     fig = px.bar(importance_df, x='Feature', y='Importance', title='Feature Importance')
     return fig
+
+print("DEBUG: model_xgboost.py loaded")
+
+def predict_sector_movements(df, sector_name):
+    print("DEBUG: predict_sector_movements called")
+    ...
