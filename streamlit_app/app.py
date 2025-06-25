@@ -20,7 +20,9 @@ import yfinance as yf
 def load_fred_data(start_date="2010-01-01") -> pd.DataFrame:
     series_names = ["CPI", "Unemployment Rate", "Fed Funds Rate"]
     dfs = [fetch_series(name, start_date=start_date) for name in series_names]
-    return pd.concat(dfs, axis=1).dropna()
+    df = pd.concat(dfs, axis=1).dropna()
+    df.index = pd.to_datetime(df.index)
+    return df
 
 def load_sector_data(start="2019-01-01") -> pd.DataFrame:
     tickers = ["XLK", "XLV", "XLF", "XLE", "XLI", "XLY", "XLP", "XLB", "XLU", "XLRE"]
@@ -57,6 +59,7 @@ st.title("📊 Macroeconomic Event Analyzer")
 st.markdown("""
 Analyze how macroeconomic events such as CPI, Unemployment, and Fed Rate changes influence various stock market sectors using Machine Learning and Time Series Forecasting.
 """)
+
 with st.expander("📘 What does this app do?"):
     st.markdown("""
     Welcome to the **Macroeconomic Event Analyzer**! 🎯
@@ -104,7 +107,6 @@ with st.expander("📘 What does this app do?"):
 
     """)
 
-
 # --- SIDEBAR ---
 st.sidebar.header("🔍 Filter Data")
 start_date = st.sidebar.date_input("Start Date", datetime.date(2019, 1, 1))
@@ -149,10 +151,13 @@ with tab1:
                 st.error(f"Error forecasting {sector}: {e}")
         else:  # XGBoost Prediction
             combined = pd.concat([sector_df[[sector]], fred_df], axis=1).dropna()
-            accuracy, predictions, model = predict_sector_movements(combined, sector)
+            # Debug info
+            st.text(f"[DEBUG] Combined shape for {sector}: {combined.shape}")
+            st.text(f"[DEBUG] Combined columns: {combined.columns.tolist()}")
 
+            accuracy, predictions, model = predict_sector_movements(combined, sector)
             if accuracy is None:
-                st.warning(f"⚠️ Insufficient data or error for {sector}, skipping XGBoost.")
+                st.warning(f"⚠️ Skipping {sector} — insufficient data or training failed.")
                 continue
 
             st.subheader(f"{sector} – XGBoost Accuracy: {accuracy:.2%}")
@@ -161,7 +166,7 @@ with tab1:
             # Feature importance
             features = combined.drop(columns=[sector]).columns.tolist()
             fig_imp = get_feature_importance(model, features)
-            st.plotly_chart(fig_imp, use_container_width=True)
+            st.plotly_chart(fig_imp, use_container_width=True, key=f"fi_{sector}")
 
             # Results table + download
             results = pd.DataFrame({
@@ -188,14 +193,14 @@ with tab2:
         z=[corr.values], x=selected_sectors, y=["Fed Funds Rate"],
         colorscale="RdBu", zmin=-1, zmax=1
     ))
-    st.plotly_chart(heat, use_container_width=True)
+    st.plotly_chart(heat, use_container_width=True, key="heatmap")
 
 with tab3:
     st.subheader("Correlation Matrix")
     merged = pd.concat([fred_df, sector_df[selected_sectors]], axis=1).dropna()
     mat = merged.corr().round(2)
     fig = px.imshow(mat, text_auto=True, color_continuous_scale="RdBu", zmin=-1, zmax=1)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="corr")
 
 st.markdown("---")
 st.caption("Made with ❤️ by Victor | Streamlit · Plotly · Prophet · XGBoost")
